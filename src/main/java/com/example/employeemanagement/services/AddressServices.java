@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.employeemanagement.dto.AddressDTO;
+import com.example.employeemanagement.exceptions.NoSuchAddressException;
 import com.example.employeemanagement.model.*;
 import com.example.employeemanagement.repository.AddressRepository;
 
@@ -17,6 +18,7 @@ public class AddressServices implements IAddressServices{
 		
 	public AddressDTO getAddressById(Integer addressId) {
 		Optional<Address> optionalAddress = addressRepository.findById(addressId);
+		if(optionalAddress.isEmpty()) throw new NoSuchAddressException();
 		Address address=optionalAddress.get();
 		AddressDTO addressDTO = new AddressDTO();
 		addressDTO.setId(address.getId());
@@ -48,6 +50,7 @@ public class AddressServices implements IAddressServices{
 	
 	public AddressDTO updateAddress(Integer addressId,AddressDTO addressDTO) {
 		Optional<Address> optionalAddress = addressRepository.findById(addressId);
+		if(optionalAddress.isEmpty()) throw new NoSuchAddressException();
 		Address address=optionalAddress.get();
 	    address.setBuildingName(addressDTO.getBuildingName());
 	    address.setCity(addressDTO.getCity());

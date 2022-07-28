@@ -3,10 +3,15 @@ package com.example.employeemanagement.dto;
 public class EmployeeDTO {
 
 	private Integer id;
+
 	private String firstName;
+
 	private String lastName;
+
 	private Integer salary;
+
 	private AddressDTO address;
+
 	private DepartmentDTO department;
 
 	

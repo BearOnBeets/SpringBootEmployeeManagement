@@ -5,7 +5,7 @@ public class UserDTO {
 	private String name;
 	private String userName;
 	private String password;
-	private String userRole;
+	private Integer userRole;
 
 	public String getName() {
 		return name;
@@ -13,10 +13,10 @@ public class UserDTO {
 	public void setName(String name) {
 		this.name = name;
 	}
-	public String getUserRole() {
+	public Integer getUserRole() {
 		return userRole;
 	}
-	public void setUserRole(String userRole) {
+	public void setUserRole(Integer userRole) {
 		this.userRole = userRole;
 	}
 	public Integer getId() {

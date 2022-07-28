@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.employeemanagement.dto.DepartmentDTO;
+import com.example.employeemanagement.exceptions.NoSuchDepartmentException;
 import com.example.employeemanagement.model.Department;
 import com.example.employeemanagement.repository.DepartmentRepository;
 
@@ -16,6 +17,7 @@ public class DepartmentServices implements IDepartmentServices{
 	
 	public DepartmentDTO getDepartmentById(Integer departmentId) {
 		Optional<Department> optionalDepartment = departmentRepository.findById(departmentId);
+		if(optionalDepartment.isEmpty()) throw new NoSuchDepartmentException();
 	    Department department=optionalDepartment.get();
 	    DepartmentDTO departmentDTO = new DepartmentDTO();
 	    departmentDTO.setId(department.getId());

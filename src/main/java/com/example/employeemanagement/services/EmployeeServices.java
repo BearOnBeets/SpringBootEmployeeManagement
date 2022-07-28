@@ -1,6 +1,8 @@
 package com.example.employeemanagement.services;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +14,9 @@ import org.springframework.stereotype.Service;
 import com.example.employeemanagement.dto.AddressDTO;
 import com.example.employeemanagement.dto.DepartmentDTO;
 import com.example.employeemanagement.dto.EmployeeDTO;
+import com.example.employeemanagement.exceptions.BadServerRequestException;
+import com.example.employeemanagement.exceptions.NoSuchAddressException;
+import com.example.employeemanagement.exceptions.NoSuchEmployeeException;
 import com.example.employeemanagement.model.*;
 import com.example.employeemanagement.repository.*;
 
@@ -23,13 +28,13 @@ public class EmployeeServices implements IEmployeeServices {
 	private EmployeeRepository employeeRepository;
 	
 	@Autowired
-	private AddressServices addressServices;
+	private IAddressServices addressServices;
 	
 	@Autowired 
 	private AddressRepository addressRepository;
 	
 	@Autowired
-	private  DepartmentServices departmentServices;
+	private  IDepartmentServices departmentServices;
 	
 	@Autowired
 	private DepartmentRepository departmentRepository;
@@ -38,6 +43,7 @@ public class EmployeeServices implements IEmployeeServices {
 	
 	public EmployeeDTO getEmployeeById(Integer employeeId) {
 		Optional<Employee> optionalEmployee = employeeRepository.findById(employeeId);
+		if(optionalEmployee.isEmpty()) throw new NoSuchEmployeeException();
 		Employee employee=optionalEmployee.get();
 		EmployeeDTO employeeDTO=new EmployeeDTO();
 		employeeDTO.setId(employee.getId());
@@ -52,52 +58,48 @@ public class EmployeeServices implements IEmployeeServices {
 	}
 	
 	public EmployeeDTO saveEmployee(EmployeeDTO employeeDTO){
+		
 		 Employee employee = new Employee();  
 		 employee.setFirstName(employeeDTO.getFirstName());
 		 employee.setLastName(employeeDTO.getLastName());
 		 employee.setSalary(employeeDTO.getSalary());
+		 
+		 DepartmentDTO departmentDTO=departmentServices.getDepartmentById(employeeDTO.getDepartment().getId());
+		Optional<Department> optionalDepartment = departmentRepository.findById(departmentDTO.getId());
+		Department department=optionalDepartment.get();
+		employee.setDepartment(department);
 		 
 		 AddressDTO addressDTO =  addressServices.saveAddress(employeeDTO.getAddress());
 		 Optional<Address> optionalAddress = addressRepository.findById(addressDTO.getId());
 		 Address address=optionalAddress.get();
 		 employee.setAddress(address);
 		 
-		 DepartmentDTO departmentDTO=departmentServices.getDepartmentById(employeeDTO.getDepartment().getId());
-		 Optional<Department> optionalDepartment = departmentRepository.findById(departmentDTO.getId());
-		 Department department=optionalDepartment.get();
-		 employee.setDepartment(department);
-		 
 		Employee employeeFromDB = employeeRepository.save(employee);
 		EmployeeDTO employeeResponseDTO=getEmployeeById(employeeFromDB.getId());
-		return employeeResponseDTO;  //Add exceptions
+		return employeeResponseDTO;
 	 
-	}
-	
-//	public Integer getEmployeeAddressId(Integer employeeId) {
-//		Employee employee=getEmployeeById(employeeId);
-//		Integer addressId=employee.getAddress().getId();
-//		return addressId;
-//		
-//	}
-	
+	}	
 	public EmployeeDTO updateEmployee(Integer employeeId,EmployeeDTO employeeDTO)
 	{
 		Optional<Employee> optionalEmployee = employeeRepository.findById(employeeId);
+		if(optionalEmployee.isEmpty()) throw new NoSuchEmployeeException();
 		Employee employee=optionalEmployee.get();
 		employee.setFirstName(employeeDTO.getFirstName());
 		employee.setLastName(employeeDTO.getLastName());
 		employee.setSalary(employeeDTO.getSalary());
-			
-		AddressDTO updatedAddressDTO = addressServices.updateAddress(employee.getAddress().getId(),employeeDTO.getAddress());
-		Optional<Address> optionalAddress = addressRepository.findById(updatedAddressDTO.getId());
-		Address address=optionalAddress.get();
-		employee.setAddress(address);
 		
 		DepartmentDTO departmentDTO=departmentServices.getDepartmentById(employeeDTO.getDepartment().getId());
 		Optional<Department> optionalDepartment = departmentRepository.findById(departmentDTO.getId());
 		Department department=optionalDepartment.get();
 		employee.setDepartment(department);
-
+		
+		if(employee.getAddress()==null) throw new NoSuchAddressException();
+		AddressDTO updatedAddressDTO = addressServices.updateAddress(employee.getAddress().getId(),employeeDTO.getAddress());
+		Optional<Address> optionalAddress = addressRepository.findById(updatedAddressDTO.getId());
+		if(optionalAddress.isEmpty()) throw new NoSuchAddressException();
+		Address address=optionalAddress.get();
+		employee.setAddress(address);
+		
 		Employee employeeFromDB = employeeRepository.save(employee);
 		EmployeeDTO employeeResponseDTO=getEmployeeById(employeeFromDB.getId());	
 		return employeeResponseDTO;
@@ -107,6 +109,7 @@ public class EmployeeServices implements IEmployeeServices {
 	
 	public String deleteEmployee(Integer employeeId) {
 		Optional<Employee> optionalEmployee = employeeRepository.findById(employeeId);
+		if(optionalEmployee.isEmpty()) throw new NoSuchEmployeeException();
 		Employee employee=optionalEmployee.get();
 		employeeRepository.delete(employee);
 		return "Employee Deleted Successfully";
@@ -115,7 +118,7 @@ public class EmployeeServices implements IEmployeeServices {
 	public List<EmployeeDTO> getEmployeeByFirstAndLastName(String firstName,String lastName)
 	{
 		List<EmployeeDTO> employeeDTOs = new ArrayList<>();
-		 List<Employee> employees = employeeRepository.findByFirstNameAndLastName(firstName,lastName);
+		 List<Employee> employees = employeeRepository.findByFirstNameOrLastNameContaining(firstName,lastName);
 		 Iterator<Employee> itr = employees.iterator();
 		 while(itr.hasNext()) {
 			 Employee employee = itr.next();
@@ -135,7 +138,8 @@ public class EmployeeServices implements IEmployeeServices {
 	
 	public List<EmployeeDTO> getAllEmployees(){
 		List<EmployeeDTO> employeeDTOs = new ArrayList<>();
-		List<Employee> employees = employeeRepository.findAll(Sort.by(Sort.Direction.ASC, "firstName"));
+		List<Employee> employees = employeeRepository.findAll();
+
 		Iterator<Employee> itr = employees.iterator();
 		 while(itr.hasNext()) {
 			 Employee employee = itr.next();
@@ -156,7 +160,26 @@ public class EmployeeServices implements IEmployeeServices {
 			 employeeDTOs.add(employeeResponseDTO);
 			 
 		 }
+		 Collections.sort(employeeDTOs, new Comparator<EmployeeDTO>() {
+		        @Override
+		        public int compare(EmployeeDTO e1, EmployeeDTO e2) {
+		            return e1.getFirstName().compareTo(e2.getFirstName());
+		        }
+		    });
 		 return employeeDTOs;
+	}
+
+	public List<EmployeeDTO> updateMultipleEmployee(List<EmployeeDTO> employeeDTOs) {
+		List<EmployeeDTO> updatedEmployeeDTOs=new ArrayList<>();
+		Iterator<EmployeeDTO> itr = employeeDTOs.iterator();
+		while(itr.hasNext()) {
+			 EmployeeDTO employee = itr.next();
+			 Integer employeeId= employee.getId();
+			 EmployeeDTO employeeDTO = new EmployeeDTO();
+			 employeeDTO=updateEmployee(employeeId,employee);
+			 updatedEmployeeDTOs.add(employeeDTO);
+		}		 
+		return updatedEmployeeDTOs;
 	}
 	
 	

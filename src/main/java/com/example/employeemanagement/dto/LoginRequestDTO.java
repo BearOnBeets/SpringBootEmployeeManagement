@@ -3,7 +3,7 @@ package com.example.employeemanagement.dto;
 public class LoginRequestDTO {
 	
 		private String userName;
-
+		
 		private String password;
 
 		@Override

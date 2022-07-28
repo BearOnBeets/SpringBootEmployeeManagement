@@ -11,4 +11,6 @@ public interface IEmployeeServices {
 	public String deleteEmployee(Integer employeeId);
 	public List<EmployeeDTO> getEmployeeByFirstAndLastName(String firstName,String lastName);
 	public List<EmployeeDTO> getAllEmployees();
+	public List<EmployeeDTO> updateMultipleEmployee(List<EmployeeDTO> employeeDTOs);
+
 }

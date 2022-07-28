@@ -1,5 +1,7 @@
 package com.example.employeemanagement.dto;
 
+import com.example.employeemanagement.model.Role;
+
 public class AuthenticatedUserDTO {
 	private String name; 
 	
@@ -7,7 +9,7 @@ public class AuthenticatedUserDTO {
 
 	private String password;
 
-	private String userRole;
+	private Role userRole;
 
 	public String getName() {
 		return name;
@@ -33,11 +35,11 @@ public class AuthenticatedUserDTO {
 		this.password = password;
 	}
 
-	public String getUserRole() {
+	public Role getUserRole() {
 		return userRole;
 	}
 
-	public void setUserRole(String userRole) {
+	public void setUserRole(Role userRole) {
 		this.userRole = userRole;
 	}
 

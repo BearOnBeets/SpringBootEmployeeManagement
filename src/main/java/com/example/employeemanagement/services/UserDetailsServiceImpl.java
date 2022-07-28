@@ -14,13 +14,13 @@ import com.example.employeemanagement.dto.AuthenticatedUserDTO;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 	@Autowired
-	UserServices userServices;
+	IUserServices userServices;
 	
 	public UserDetails loadUserByUsername(String username) {
 		final AuthenticatedUserDTO authenticatedUserDTO = userServices.findAuthenticatedUserByUsername(username);
 		final String authenticatedUserName = authenticatedUserDTO.getUserName();
 		final String authenticatedPassword = authenticatedUserDTO.getPassword();
-		final SimpleGrantedAuthority grantedAuthority = new SimpleGrantedAuthority(authenticatedUserDTO.getUserRole());		
+		final SimpleGrantedAuthority grantedAuthority = new SimpleGrantedAuthority(authenticatedUserDTO.getUserRole().getRoleName());		
 		return new User(authenticatedUserName, authenticatedPassword, Collections.singletonList(grantedAuthority));
 	
 	}

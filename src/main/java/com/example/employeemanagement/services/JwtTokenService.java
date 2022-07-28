@@ -5,18 +5,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import com.example.employeemanagement.model.User;
-
+import com.example.employeemanagement.dto.AuthenticatedUserDTO;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
 @Service
 public class JwtTokenService {
+	
+	@Autowired
+	UserServices userService;
 	
 	public static final long JWT_TOKEN_VALIDITY = 5 * 60 * 60;
 	
@@ -40,7 +42,7 @@ public class JwtTokenService {
 
 
     //for retrieving any information from token we will need the secret key
-    private Claims getAllClaimsFromToken(String token) {
+    public Claims getAllClaimsFromToken(String token) {
         return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
     }
 
@@ -53,17 +55,18 @@ public class JwtTokenService {
 
 
     //generate token for user
-    public String generateToken(User user) {
+    public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        return doGenerateToken(claims, user.getUserName());
+        AuthenticatedUserDTO authenticatedUserDTO = userService.findAuthenticatedUserByUsername(userDetails.getUsername());
+        return doGenerateToken(claims, userDetails.getUsername(),authenticatedUserDTO.getUserRole().getRoleName());
     }
 
 
     //while creating the token -
     //1. Define  claims of the token, like Issuer, Expiration, Subject, and the ID
     //2. Sign the JWT using the HS512 algorithm and secret key.
-    private String doGenerateToken(Map<String, Object> claims, String subject) {
-        return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
+    private String doGenerateToken(Map<String, Object> claims, String subject,String userRole) {
+        return Jwts.builder().claim("role",userRole).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY * 1000))
                 .signWith(SignatureAlgorithm.HS512, secretKey).compact();
     }

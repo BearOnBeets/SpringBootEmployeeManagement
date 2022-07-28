@@ -7,7 +7,10 @@ import org.springframework.stereotype.Service;
 
 import com.example.employeemanagement.dto.AuthenticatedUserDTO;
 import com.example.employeemanagement.dto.UserDTO;
+import com.example.employeemanagement.exceptions.NoSuchRoleException;
+import com.example.employeemanagement.model.Role;
 import com.example.employeemanagement.model.User;
+import com.example.employeemanagement.repository.RoleRepository;
 import com.example.employeemanagement.repository.UserRepository;
 
 
@@ -18,6 +21,9 @@ public class UserServices implements IUserServices {
 	@Autowired
 	UserRepository userRepository;
 	
+	@Autowired
+	RoleRepository roleRepository;
+	
 	public UserDTO getUserByID(Integer userId) {
 		Optional<User> optionalUser = userRepository.findById(userId);
 		User user=optionalUser.get();
@@ -25,6 +31,8 @@ public class UserServices implements IUserServices {
 		userDTO.setId(user.getId());
 		userDTO.setUserName(user.getUserName());
 		userDTO.setPassword(user.getPassword());
+		userDTO.setName(user.getName());
+		userDTO.setUserRole(user.getUserRole().getId());
 		return userDTO;
 	}
 
@@ -33,6 +41,11 @@ public class UserServices implements IUserServices {
 		User user=new User();
 		user.setUserName(userDTO.getUserName());
 		user.setPassword(userDTO.getPassword());
+		user.setName(userDTO.getName());
+		Optional<Role> optionalRole = roleRepository.findById(userDTO.getUserRole());
+		if(optionalRole.isEmpty()) throw new NoSuchRoleException();
+		Role role=optionalRole.get();
+		user.setUserRole(role);
 		User userFromDB = userRepository.save(user);
 		UserDTO userResponseDTO = getUserByID(userFromDB.getId());
 		return userResponseDTO;
@@ -54,7 +67,7 @@ public class UserServices implements IUserServices {
 		AuthenticatedUserDTO authenticatedUserDTO  = new AuthenticatedUserDTO();
 		authenticatedUserDTO.setName(username);
 		authenticatedUserDTO.setUserName(user.getUserName());
-		authenticatedUserDTO.setUserRole(user.getUserRole().toString());
+		authenticatedUserDTO.setUserRole(user.getUserRole());
 		authenticatedUserDTO.setPassword(user.getPassword());
 		return authenticatedUserDTO;
 	}
